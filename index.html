@@ -1,0 +1,1274 @@
+# classroom-savigs
+ระบบออมเงินห้องเรียนสัปดาห์ละ 10 บาท⁠
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบออมเงินและค่าใช้จ่ายห้องเรียน (Cute 3D Pastel)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Fredoka & Prompt) -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2canvas for PNG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #e0f2fe 50%, #fbcfe8 100%);
+            min-height: 100vh;
+        }
+
+        .font-playful {
+            font-family: 'Fredoka', 'Prompt', sans-serif;
+        }
+
+        /* 3D Pastel Claymorphism & Micro-interactions */
+        .clay-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 12px 28px -6px rgba(147, 197, 253, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            border-radius: 2rem;
+        }
+
+        .clay-btn-emerald {
+            background: linear-gradient(180deg, #6ee7b7 0%, #10b981 100%);
+            box-shadow: 0 6px 0 #047857, 0 10px 15px rgba(16, 185, 129, 0.3);
+            border-bottom: 4px solid #047857;
+            transition: all 0.15s ease;
+        }
+        .clay-btn-emerald:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #047857, 0 14px 20px rgba(16, 185, 129, 0.4);
+        }
+        .clay-btn-emerald:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #047857;
+        }
+
+        .clay-btn-rose {
+            background: linear-gradient(180deg, #fda4af 0%, #f43f5e 100%);
+            box-shadow: 0 6px 0 #be123c, 0 10px 15px rgba(244, 63, 94, 0.3);
+            border-bottom: 4px solid #be123c;
+            transition: all 0.15s ease;
+        }
+        .clay-btn-rose:hover {
+            transform: translateY(-2px);
+        }
+        .clay-btn-rose:active {
+            transform: translateY(3px);
+        }
+
+        .clay-btn-amber {
+            background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
+            box-shadow: 0 6px 0 #b45309, 0 10px 15px rgba(245, 158, 11, 0.3);
+            border-bottom: 4px solid #b45309;
+            transition: all 0.15s ease;
+        }
+        .clay-btn-amber:hover {
+            transform: translateY(-2px);
+        }
+        .clay-btn-amber:active {
+            transform: translateY(3px);
+        }
+
+        /* Float & Bounce Animation for Chibi 3D Visuals */
+        @keyframes chibiFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
+        }
+        .animate-chibi {
+            animation: chibiFloat 3.5s ease-in-out infinite;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="text-slate-700 flex flex-col justify-between selection:bg-pink-200 min-h-screen">
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Confirm Modal -->
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-pink-200 text-center transform transition-all">
+            <div class="w-16 h-16 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl animate-bounce">
+                🐱
+            </div>
+            <h3 id="confirm-title" class="font-bold text-xl text-slate-800 mb-2">ยืนยันการทำรายการ</h3>
+            <p id="confirm-msg" class="text-sm text-slate-600 mb-6">คุณแน่ใจหรือว่าต้องการดำเนินการนี้?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-btn-cancel" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-sm transition">ยกเลิก</button>
+                <button id="confirm-btn-ok" class="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-2xl text-sm shadow-md transition">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b-4 border-pink-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()">
+                    <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-amber-300 animate-chibi">
+                        🐷
+                    </div>
+                    <div>
+                        <h1 class="font-playful font-bold text-xl text-pink-500 flex items-center gap-1">
+                            <span>กระปุกออมบุญห้องเรียน (สัปดาห์ละ 10 บาท)</span>
+                            <span class="text-sm">✨</span>
+                        </h1>
+                        <p class="text-xs text-slate-400 font-medium">ระบบออมเงิน & ค่าใช้จ่ายสไตล์จิบิพาสเทล (40 สัปดาห์)</p>
+                    </div>
+                </div>
+
+                <div id="user-nav-info" class="hidden flex items-center gap-3">
+                    <div class="text-right hidden sm:block bg-pink-50/80 px-4 py-1.5 rounded-2xl border border-pink-200">
+                        <p id="nav-user-name" class="font-bold text-sm text-pink-600"></p>
+                        <p id="nav-user-role" class="text-xs text-amber-600 font-medium"></p>
+                    </div>
+                    <button onclick="logout()" class="bg-rose-100 hover:bg-rose-200 text-rose-600 font-bold px-4 py-2 rounded-2xl text-xs transition flex items-center gap-1.5 border border-rose-300">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>ออกระบบ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-grow">
+
+        <!-- ================= SECTION 1: LOGIN ================= -->
+        <div id="login-section" class="max-w-md mx-auto my-8">
+            <div class="clay-card p-6 sm:p-8 relative overflow-hidden">
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 bg-pink-100 border-4 border-pink-200 rounded-3xl flex items-center justify-center mx-auto mb-3 shadow-inner text-5xl animate-chibi">
+                        🐥
+                    </div>
+                    <h2 class="font-playful text-2xl font-bold text-pink-500">ยินดีต้อนรับเพื่อนๆ!</h2>
+                    <p class="text-xs text-slate-500 mt-1">เลือกประเภทการเข้าสู่ระบบ (ออมสัปดาห์ละ 10 บาท)</p>
+                </div>
+
+                <!-- Login Type Tab -->
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200">
+                    <button id="tab-student" onclick="switchLoginTab('student')" class="w-1/2 py-2 rounded-xl text-center font-bold text-xs text-pink-600 bg-white shadow-sm transition">
+                        👧 นักเรียน / เหรัญญิก
+                    </button>
+                    <button id="tab-admin" onclick="switchLoginTab('admin')" class="w-1/2 py-2 rounded-xl text-center font-bold text-xs text-slate-500 hover:text-pink-600 transition">
+                        👨‍🏫 คุณครูประจำชั้น
+                    </button>
+                </div>
+
+                <!-- Form 1: Student / Treasurer Login -->
+                <form id="form-student-login" onsubmit="handleStudentLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">รหัสนักเรียน (เช่น STU01)</label>
+                        <input type="text" id="student-id" required placeholder="กรอกรหัสนักเรียน" class="w-full border-2 border-pink-100 rounded-2xl p-3 text-xs font-semibold focus:border-pink-400 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">รหัส PIN 4 หลัก</label>
+                        <input type="password" id="student-pin" maxlength="4" required placeholder="••••" class="w-full border-2 border-pink-100 rounded-2xl p-3 text-xs font-semibold focus:border-pink-400 focus:outline-none transition">
+                    </div>
+                    <button type="submit" class="w-full clay-btn-rose py-3 rounded-2xl text-white font-bold text-sm mt-2">
+                        เข้าสู่ระบบ
+                    </button>
+                </form>
+
+                <!-- Form 2: Teacher / Staff Login -->
+                <form id="form-staff-login" onsubmit="handleStaffLogin(event)" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                        <input type="text" id="staff-user" required placeholder="admin" class="w-full border-2 border-amber-100 rounded-2xl p-3 text-xs font-semibold focus:border-amber-400 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">รหัสผ่าน (Password)</label>
+                        <input type="password" id="staff-pass" required placeholder="admin123" class="w-full border-2 border-amber-100 rounded-2xl p-3 text-xs font-semibold focus:border-amber-400 focus:outline-none transition">
+                    </div>
+                    <button type="submit" class="w-full clay-btn-amber py-3 rounded-2xl text-white font-bold text-sm mt-2">
+                        เข้าสู่ระบบคุณครู
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= SECTION 2: STUDENT DASHBOARD ================= -->
+        <div id="student-dashboard" class="hidden space-y-6">
+            <!-- Header Card -->
+            <div class="clay-card p-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-pink-50 via-purple-50 to-sky-50">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-white rounded-3xl border-2 border-pink-200 flex items-center justify-center text-3xl shadow-sm animate-chibi">
+                        🦄
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 id="stu-display-name" class="font-playful text-2xl font-bold text-slate-800">สวัสดีคุณนักเรียน</h2>
+                            <span id="stu-is-treasurer-badge" class="hidden bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🪙 เหรัญญิกประจำชั้น</span>
+                        </div>
+                        <p id="stu-display-id" class="text-xs text-slate-500 font-medium">รหัสประจำตัว: -</p>
+                    </div>
+                </div>
+                <div class="bg-white/80 p-4 rounded-3xl border-2 border-pink-200 text-right w-full md:w-auto shadow-sm">
+                    <p class="text-xs font-bold text-slate-400">เงินออมสะสมของคุณ (เป้าหมาย 10฿/สัปดาห์)</p>
+                    <p id="stu-total-savings" class="text-3xl font-extrabold text-pink-500 mt-0.5">0.00 <span class="text-sm text-slate-500 font-normal">บาท</span></p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="clay-card p-5 flex items-center gap-4 bg-emerald-50/60 border-emerald-200">
+                    <div class="w-12 h-12 bg-emerald-200 text-emerald-700 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                        🌱
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">สถานะออมเงินล่าสุด</p>
+                        <p id="stu-weekly-status" class="text-base font-bold text-emerald-600">-</p>
+                    </div>
+                </div>
+
+                <div class="clay-card p-5 flex items-center gap-4 bg-sky-50/60 border-sky-200">
+                    <div class="w-12 h-12 bg-sky-200 text-sky-700 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                        🏛️
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">เงินกองกลางห้องเรียนรวม</p>
+                        <p id="stu-class-fund" class="text-base font-bold text-sky-600">0.00 บาท</p>
+                    </div>
+                </div>
+
+                <div class="clay-card p-5 flex items-center gap-4 bg-rose-50/60 border-rose-200">
+                    <div class="w-12 h-12 bg-rose-200 text-rose-700 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                        🛍️
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">ค่าใช้จ่ายส่วนกลางรวม</p>
+                        <p id="stu-class-expenses" class="text-base font-bold text-rose-600">0.00 บาท</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Savings Status Checklist & Expense List Split -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Personal Weekly Status -->
+                <div class="clay-card p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b-2 border-pink-100">
+                        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                            <span>🗓️</span>
+                            <span>ตรวจสอบการชำระเงินออม (40 สัปดาห์ @ 10฿)</span>
+                        </h3>
+                        <span class="text-xs font-bold text-pink-500 bg-pink-100 px-3 py-1 rounded-full">สัปดาห์ที่ 1 - 40</span>
+                    </div>
+
+                    <div id="stu-weekly-checklist" class="space-y-3 flex-grow max-h-[420px] overflow-y-auto custom-scrollbar pr-2">
+                        <!-- Dynamic Checklist Cards -->
+                    </div>
+                </div>
+
+                <!-- Classroom Expenses Read-Only -->
+                <div class="clay-card p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b-2 border-rose-100">
+                        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                            <span>📝</span>
+                            <span>บันทึกค่าใช้จ่ายกลางห้องเรียน</span>
+                        </h3>
+                        <span class="text-xs font-bold text-rose-500 bg-rose-100 px-3 py-1 rounded-full">ดูข้อมูลอย่างเดียว</span>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar flex-grow max-h-[420px]">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-rose-50 text-rose-700 text-xs font-bold border-b border-rose-200">
+                                    <th class="p-3 rounded-l-xl">รายการ</th>
+                                    <th class="p-3">วันที่</th>
+                                    <th class="p-3 text-right rounded-r-xl">จำนวนเงิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stu-expense-tbody" class="divide-y divide-slate-100">
+                                <!-- Dynamic Expense Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SECTION 3: STAFF DASHBOARD (TEACHER / TREASURER) ================= -->
+        <div id="staff-dashboard" class="hidden space-y-6">
+            <!-- Staff Top Summary Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="clay-card p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
+                    <p class="text-xs font-bold text-emerald-600 mb-1">💰 เงินออมสะสมรวมทั้งห้อง</p>
+                    <p id="staff-stat-total-savings" class="text-2xl font-black text-emerald-600">0.00 ฿</p>
+                    <p class="text-[10px] text-slate-400 mt-1">ยอดออมจากนักเรียนทุกคน</p>
+                </div>
+
+                <div class="clay-card p-5 bg-gradient-to-br from-sky-50 to-blue-50 border-sky-200">
+                    <p class="text-xs font-bold text-sky-600 mb-1">🏦 เงินกองกลางห้องเรียน (10%)</p>
+                    <p id="staff-stat-class-fund" class="text-2xl font-black text-sky-600">0.00 ฿</p>
+                    <p class="text-[10px] text-slate-400 mt-1">เงินจัดสรรส่วนกลาง</p>
+                </div>
+
+                <div class="clay-card p-5 bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200">
+                    <p class="text-xs font-bold text-rose-600 mb-1">💸 รายจ่ายห้องเรียนรวม</p>
+                    <p id="staff-stat-expenses" class="text-2xl font-black text-rose-600">0.00 ฿</p>
+                    <p class="text-[10px] text-slate-400 mt-1">เบิกจ่ายส่วนกลางสะสม</p>
+                </div>
+
+                <div class="clay-card p-5 bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+                    <p class="text-xs font-bold text-amber-600 mb-1">⚖️ เงินคงเหลือจริงกองกลาง</p>
+                    <p id="staff-stat-fund-net" class="text-2xl font-black text-amber-600">0.00 ฿</p>
+                    <p class="text-[10px] text-slate-400 mt-1">กองกลางหักรายจ่ายแล้ว</p>
+                </div>
+            </div>
+
+            <!-- Export Buttons Toolbar (สำหรับครูและเหรัญญิก) -->
+            <div class="clay-card p-4 flex flex-wrap items-center justify-between gap-3 bg-white/90">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📦</span>
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-800">ส่งออกรายงานสรุป (Export Reports)</h4>
+                        <p class="text-xs text-slate-400">รองรับสัปดาห์ฝากเงิน 1 - 40 สัปดาห์ (สัปดาห์ละ 10 บาท)</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportToPDF()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3.5 py-2 rounded-xl text-xs border border-rose-300 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pdf text-rose-500"></i>
+                        <span>Export PDF</span>
+                    </button>
+                    <button onclick="exportToExcel()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold px-3.5 py-2 rounded-xl text-xs border border-emerald-300 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                        <span>Export Excel</span>
+                    </button>
+                    <button onclick="exportToCSV()" class="bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3.5 py-2 rounded-xl text-xs border border-teal-300 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv text-teal-600"></i>
+                        <span>Export Google Sheet (CSV)</span>
+                    </button>
+                    <button onclick="exportToPNG()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold px-3.5 py-2 rounded-xl text-xs border border-purple-300 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-image text-purple-600"></i>
+                        <span>Export PNG</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Staff Sub-Tabs Container -->
+            <div id="exportable-report-area" class="clay-card p-6 bg-white/95">
+                <!-- Navigation Tabs -->
+                <div class="flex border-b-2 border-slate-100 pb-3 gap-2 overflow-x-auto custom-scrollbar">
+                    <button id="staff-tab-btn-deposit" onclick="switchStaffSubTab('deposit')" class="px-4 py-2.5 rounded-2xl font-bold text-xs bg-pink-100 text-pink-700 border border-pink-200 flex items-center gap-2 transition">
+                        <span>✏️ บันทึก/แก้ไขยอดออม</span>
+                    </button>
+                    <button id="staff-tab-btn-expenses" onclick="switchStaffSubTab('expenses')" class="px-4 py-2.5 rounded-2xl font-bold text-xs text-slate-500 hover:bg-pink-50 flex items-center gap-2 transition">
+                        <span>🧾 จัดการรายรับ-รายจ่าย</span>
+                    </button>
+                    <button id="staff-tab-btn-students" onclick="switchStaffSubTab('students')" class="px-4 py-2.5 rounded-2xl font-bold text-xs text-slate-500 hover:bg-pink-50 flex items-center gap-2 transition hidden">
+                        <span>👥 รายชื่อนักเรียน & กำหนดเหรัญญิก</span>
+                    </button>
+                </div>
+
+                <!-- SUB TAB 1: บันทึกและแก้ไขเงินออม (สำหรับทั้งครูและเหรัญญิก) -->
+                <div id="staff-subtab-deposit" class="mt-6 space-y-6">
+                    <div class="bg-emerald-50/70 p-5 rounded-3xl border-2 border-emerald-200">
+                        <h4 class="font-bold text-sm text-emerald-800 mb-3 flex items-center gap-2">
+                            <span>✨</span>
+                            <span>ลงบันทึกเงินออมใหม่ / แก้ไขยอดเงิน (อัตราออมสัปดาห์ละ 10 บาท)</span>
+                        </h4>
+                        <form onsubmit="handleSaveDeposit(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">เลือกรหัสนักเรียน</label>
+                                <select id="staff-deposit-student" required class="w-full p-2.5 bg-white border-2 border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-400">
+                                    <!-- Dynamic Options -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">เลือกสัปดาห์ (1 - 40)</label>
+                                <select id="staff-deposit-week" required class="w-full p-2.5 bg-white border-2 border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-400">
+                                    <!-- Dynamic Weeks 1 to 40 -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนเงิน (บาท)</label>
+                                <input type="number" id="staff-deposit-amount" min="0" step="0.5" required placeholder="10" value="10" class="w-full p-2.5 bg-white border-2 border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-400">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full clay-btn-emerald py-2.5 rounded-xl text-white font-bold text-xs">
+                                    บันทึก / แก้ไขยอดเงิน
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Matrix Table for Editing Savings -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold text-sm text-slate-700">ตารางบันทึกการออม 40 สัปดาห์ (เลื่อนขวาเพื่อดูทั้งหมด)</h4>
+                            <span class="text-xs font-semibold text-slate-400">สัปดาห์ที่ 1 - 40</span>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar border-2 border-slate-100 rounded-2xl max-h-[500px]">
+                            <table class="w-full text-xs text-left border-collapse min-w-[1500px]">
+                                <thead class="sticky top-0 bg-pink-50 shadow-sm z-10">
+                                    <tr id="staff-matrix-thead-tr" class="text-pink-700 font-bold border-b border-pink-200">
+                                        <th class="p-3 sticky left-0 bg-pink-50 z-20 shadow-sm">รหัส</th>
+                                        <th class="p-3 sticky left-16 bg-pink-50 z-20 shadow-sm border-r border-pink-200">ชื่อ - นามสกุล</th>
+                                        <!-- Dynamic Header W1 - W40 -->
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-savings-matrix-tbody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic Savings Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB TAB 2: รายรับ - รายจ่าย (แก้ไขและลบได้) -->
+                <div id="staff-subtab-expenses" class="mt-6 space-y-6 hidden">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <div>
+                            <h4 class="font-bold text-base text-slate-800">จัดการค่าใช้จ่ายกลางห้องเรียน</h4>
+                            <p class="text-xs text-slate-400">ครูและเหรัญญิกสามารถแก้ไขหรือลบรายการเมื่อพิมพ์ผิดได้</p>
+                        </div>
+                        <button onclick="openModalExpense(null)" class="clay-btn-rose px-4 py-2 rounded-xl text-white font-bold text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>เพิ่มรายการใหม่</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar border-2 border-slate-100 rounded-2xl">
+                        <table class="w-full text-xs text-left">
+                            <thead>
+                                <tr class="bg-rose-50 text-rose-700 font-bold border-b border-rose-200">
+                                    <th class="p-3">วันที่</th>
+                                    <th class="p-3">รายการ / รายรายละเอียด</th>
+                                    <th class="p-3 text-right">จำนวนเงิน (บาท)</th>
+                                    <th class="p-3 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-expense-tbody" class="divide-y divide-slate-100">
+                                <!-- Dynamic Expense Rows with Edit/Delete -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUB TAB 3: รายชื่อนักเรียน & กำหนดเหรัญญิก (เข้าถึงได้เฉพาะครู) -->
+                <div id="staff-subtab-students" class="mt-6 space-y-6 hidden">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <div>
+                            <h4 class="font-bold text-base text-slate-800">รายชื่อนักเรียนในระบบ</h4>
+                            <p class="text-xs text-slate-400">คุณครูสามารถตั้งค่าแต่งตั้งหรือยกเลิกสิทธิ์เหรัญญิกให้นักเรียนได้ที่นี่</p>
+                        </div>
+                        <button id="btn-add-student-container" onclick="toggleModal('modal-add-student', true)" class="clay-btn-emerald px-4 py-2 rounded-xl text-white font-bold text-xs flex items-center gap-1.5 hidden">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>เพิ่มนักเรียน</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar border-2 border-slate-100 rounded-2xl">
+                        <table class="w-full text-xs text-left">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                                    <th class="p-3">รหัสนักเรียน</th>
+                                    <th class="p-3">ชื่อ - นามสกุล</th>
+                                    <th class="p-3 text-center">ตำแหน่ง / สิทธิ์</th>
+                                    <th class="p-3">PIN เข้าสู่ระบบ</th>
+                                    <th class="p-3 text-right">เงินออมสะสม</th>
+                                    <th class="p-3 text-center">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-student-tbody" class="divide-y divide-slate-100">
+                                <!-- Dynamic Student Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white/60 border-t border-pink-200 mt-12 py-4 text-center text-xs font-semibold text-slate-400">
+        <p>ระบบออมเงินและบันทึกค่าใช้จ่ายห้องเรียนสไตล์พาสเทลจิบิ 3D &copy; 2026</p>
+    </footer>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal: Add/Edit Expense -->
+    <div id="modal-expense" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative border-4 border-rose-200">
+            <h3 id="modal-expense-title" class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                <span>🛍️</span>
+                <span>บันทึกค่าใช้จ่ายห้องเรียน</span>
+            </h3>
+            <form onsubmit="handleSaveExpenseForm(event)" class="space-y-4">
+                <input type="hidden" id="exp-edit-id">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">รายการ / รายรายละเอียด</label>
+                    <input type="text" id="exp-title" required placeholder="เช่น ซื้อแปรงลบกระดาน" class="w-full border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:border-rose-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนเงิน (บาท)</label>
+                    <input type="number" id="exp-amount" min="1" step="0.5" required placeholder="50" class="w-full border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:border-rose-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">วันที่เบิกจ่าย</label>
+                    <input type="date" id="exp-date" required class="w-full border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:border-rose-400 focus:outline-none">
+                </div>
+                <div class="flex gap-2 justify-end pt-2">
+                    <button type="button" onclick="toggleModal('modal-expense', false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition">ยกเลิก</button>
+                    <button type="submit" class="px-5 py-2 clay-btn-rose text-white text-xs font-bold rounded-xl shadow transition">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Student (เฉพาะครู) -->
+    <div id="modal-add-student" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative border-4 border-emerald-200">
+            <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                <span>👧</span>
+                <span>เพิ่มนักเรียนใหม่</span>
+            </h3>
+            <form onsubmit="handleCreateStudent(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">รหัสนักเรียน (ID)</label>
+                    <input type="text" id="new-stu-id" required placeholder="เช่น STU06" class="w-full border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:border-emerald-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">ชื่อ - นามสกุล</label>
+                    <input type="text" id="new-stu-name" required placeholder="ด.ช. สายออม มีสุข" class="w-full border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:border-emerald-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">PIN เข้าสู่ระบบ</label>
+                    <input type="password" id="new-stu-pin" maxlength="4" required placeholder="1234" class="w-full border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold focus:border-emerald-400 focus:outline-none">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="new-stu-is-treasurer" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                    <label for="new-stu-is-treasurer" class="text-xs font-bold text-slate-700">แต่งตั้งเป็นเหรัญญิกประจำชั้น</label>
+                </div>
+                <div class="flex gap-2 justify-end pt-2">
+                    <button type="button" onclick="toggleModal('modal-add-student', false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition">ยกเลิก</button>
+                    <button type="submit" class="px-5 py-2 clay-btn-emerald text-white text-xs font-bold rounded-xl shadow transition">บันทึกนักเรียน</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        const MAX_WEEKS = 40;
+        const DEFAULT_WEEKLY_AMOUNT = 10; // กำหนดเงินออมสัปดาห์ละ 10 บาท
+
+        // Helper to generate default savings object for 40 weeks with 10 Baht
+        function generateInitialSavings(filledWeeks = 4, amount = DEFAULT_WEEKLY_AMOUNT) {
+            const savings = {};
+            for (let w = 1; w <= MAX_WEEKS; w++) {
+                savings[w] = w <= filledWeeks ? amount : 0;
+            }
+            return savings;
+        }
+
+        // Data Structures (อัปเดตยอดตั้งต้นเป็นสัปดาห์ละ 10 บาท)
+        const INITIAL_STUDENTS = [
+            { id: "STU01", name: "ด.ช. รักดี มีออม", pin: "1234", isTreasurer: true, savings: generateInitialSavings(4, 10) },
+            { id: "STU02", name: "ด.ญ. ขยัน เรียนดี", pin: "1234", isTreasurer: false, savings: generateInitialSavings(3, 10) },
+            { id: "STU03", name: "ด.ช. สมชาย มั่งคั่ง", pin: "1234", isTreasurer: false, savings: generateInitialSavings(2, 10) },
+            { id: "STU04", name: "ด.ญ. ปานวาด สดใส", pin: "1234", isTreasurer: false, savings: generateInitialSavings(4, 10) },
+            { id: "STU05", name: "ด.ช. วินัย ตรงเวลา", pin: "1234", isTreasurer: false, savings: generateInitialSavings(1, 10) }
+        ];
+
+        const INITIAL_EXPENSES = [
+            { id: "EXP1", title: "ซื้อปากกาเคมีและแปรงลบกระดาน", amount: 30, date: "2026-02-10" },
+            { id: "EXP2", title: "อุปกรณ์จัดบอร์ดนิทรรศการห้องเรียน", amount: 50, date: "2026-02-15" }
+        ];
+
+        let appState = {
+            students: [],
+            expenses: [],
+            currentUser: null,
+            classFundRate: 0.1 // 10% allocated for classroom fund
+        };
+
+        let pendingConfirmAction = null;
+
+        // Confirm Dialog Helper
+        function customConfirm(title, message, onConfirm) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerText = message;
+            pendingConfirmAction = onConfirm;
+            toggleModal('modal-confirm', true);
+        }
+
+        document.getElementById('confirm-btn-ok').onclick = function() {
+            if (pendingConfirmAction) pendingConfirmAction();
+            toggleModal('modal-confirm', false);
+        };
+
+        document.getElementById('confirm-btn-cancel').onclick = function() {
+            pendingConfirmAction = null;
+            toggleModal('modal-confirm', false);
+        };
+
+        // Populate Week Select Options (1 - 40)
+        function initWeekOptions() {
+            const weekSelect = document.getElementById('staff-deposit-week');
+            if (!weekSelect) return;
+            weekSelect.innerHTML = '';
+            for (let i = 1; i <= MAX_WEEKS; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = `สัปดาห์ที่ ${i}`;
+                weekSelect.appendChild(opt);
+            }
+        }
+
+        // App Init
+        window.onload = function() {
+            appState.students = JSON.parse(JSON.stringify(INITIAL_STUDENTS));
+            appState.expenses = JSON.parse(JSON.stringify(INITIAL_EXPENSES));
+            const today = new Date().toISOString().split('T')[0];
+            const expDateInput = document.getElementById('exp-date');
+            if(expDateInput) expDateInput.value = today;
+
+            initWeekOptions();
+            renderApp();
+        };
+
+        // Login Switcher
+        function switchLoginTab(type) {
+            const btnStu = document.getElementById('tab-student');
+            const btnAdm = document.getElementById('tab-admin');
+            const formStu = document.getElementById('form-student-login');
+            const formStaff = document.getElementById('form-staff-login');
+
+            [btnStu, btnAdm].forEach(b => b.className = "w-1/2 py-2 rounded-xl text-center font-bold text-xs text-slate-500 hover:text-pink-600 transition");
+
+            if(type === 'student') {
+                btnStu.className = "w-1/2 py-2 rounded-xl text-center font-bold text-xs text-pink-600 bg-white shadow-sm transition";
+                formStu.classList.remove('hidden');
+                formStaff.classList.add('hidden');
+            } else {
+                btnAdm.className = "w-1/2 py-2 rounded-xl text-center font-bold text-xs text-pink-600 bg-white shadow-sm transition";
+                formStu.classList.add('hidden');
+                formStaff.classList.remove('hidden');
+            }
+        }
+
+        function handleStudentLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('student-id').value.trim();
+            const pin = document.getElementById('student-pin').value.trim();
+
+            const student = appState.students.find(s => s.id.toLowerCase() === id.toLowerCase() && s.pin === pin);
+            if(student) {
+                const role = student.isTreasurer ? 'treasurer' : 'student';
+                appState.currentUser = { role: role, data: student };
+                showToast(student.isTreasurer ? "เข้าสู่ระบบในสิทธิ์เหรัญญิกห้องเรียบร้อย!" : "เข้าสู่ระบบนักเรียนสำเร็จ!", "success");
+                renderApp();
+            } else {
+                showToast("รหัสนักเรียนหรือ PIN ไม่ถูกต้อง", "error");
+            }
+        }
+
+        function handleStaffLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('staff-user').value.trim();
+            const pass = document.getElementById('staff-pass').value.trim();
+
+            if(user === 'admin' && pass === 'admin123') {
+                appState.currentUser = { role: 'admin', data: { name: 'คุณครูประจำชั้น' } };
+                showToast("เข้าสู่ระบบคุณครูสำเร็จ!", "success");
+                renderApp();
+            } else {
+                showToast("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง", "error");
+            }
+        }
+
+        function logout() {
+            appState.currentUser = null;
+            document.getElementById('form-student-login').reset();
+            document.getElementById('form-staff-login').reset();
+            renderApp();
+            showToast("ออกจากระบบแล้ว", "info");
+        }
+
+        function goHome() {
+            if(!appState.currentUser) return;
+            renderApp();
+        }
+
+        // Render Orchestrator
+        function renderApp() {
+            const loginSec = document.getElementById('login-section');
+            const stuDash = document.getElementById('student-dashboard');
+            const staffDash = document.getElementById('staff-dashboard');
+            const navUser = document.getElementById('user-nav-info');
+
+            if(!appState.currentUser) {
+                loginSec.classList.remove('hidden');
+                stuDash.classList.add('hidden');
+                staffDash.classList.add('hidden');
+                navUser.classList.add('hidden');
+                return;
+            }
+
+            loginSec.classList.add('hidden');
+            navUser.classList.remove('hidden');
+
+            document.getElementById('nav-user-name').innerText = appState.currentUser.data.name;
+            let roleTitle = 'นักเรียน';
+            if(appState.currentUser.role === 'treasurer') roleTitle = 'เหรัญญิกประจำชั้น 🪙';
+            if(appState.currentUser.role === 'admin') roleTitle = 'คุณครูประจำชั้น 👨‍🏫';
+            document.getElementById('nav-user-role').innerText = roleTitle;
+
+            if(appState.currentUser.role === 'student') {
+                stuDash.classList.remove('hidden');
+                staffDash.classList.add('hidden');
+                renderStudentDashboard();
+            } else {
+                staffDash.classList.remove('hidden');
+                stuDash.classList.add('hidden');
+                renderStaffDashboard();
+            }
+        }
+
+        // Student Dashboard Render
+        function renderStudentDashboard() {
+            const student = appState.students.find(s => s.id === appState.currentUser.data.id) || appState.currentUser.data;
+
+            document.getElementById('stu-display-name').innerText = `สวัสดี, ${student.name}`;
+            document.getElementById('stu-display-id').innerText = `รหัสประจำตัว: ${student.id}`;
+
+            const badge = document.getElementById('stu-is-treasurer-badge');
+            if(student.isTreasurer) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+
+            const totalPersonal = Object.values(student.savings || {}).reduce((sum, val) => sum + (val || 0), 0);
+            document.getElementById('stu-total-savings').innerText = `${totalPersonal.toFixed(2)} บาท`;
+
+            // หา สัปดาห์ล่าสุดที่มีการจ่ายเงิน
+            let latestPaidWeek = 0;
+            for (let w = MAX_WEEKS; w >= 1; w--) {
+                if (student.savings && student.savings[w] > 0) {
+                    latestPaidWeek = w;
+                    break;
+                }
+            }
+
+            document.getElementById('stu-weekly-status').innerText = latestPaidWeek > 0 
+                ? `ชำระแล้วถึงสัปดาห์ที่ ${latestPaidWeek}` 
+                : 'ยังไม่มีประวัติการออมเงิน';
+
+            const classTotalSavings = getAllStudentsTotalSavings();
+            const classFund = classTotalSavings * appState.classFundRate;
+            const classExpenses = getTotalExpenses();
+
+            document.getElementById('stu-class-fund').innerText = `${classFund.toFixed(2)} บาท`;
+            document.getElementById('stu-class-expenses').innerText = `${classExpenses.toFixed(2)} บาท`;
+
+            // Checklist Card List for 40 Weeks
+            const checklistContainer = document.getElementById('stu-weekly-checklist');
+            checklistContainer.innerHTML = '';
+            for(let w = 1; w <= MAX_WEEKS; w++) {
+                const amount = student.savings ? (student.savings[w] || 0) : 0;
+                const isPaid = amount > 0;
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-2xl border-2 flex items-center justify-between ${isPaid ? 'bg-emerald-50/80 border-emerald-200' : 'bg-slate-50 border-slate-200'}`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm ${isPaid ? 'bg-emerald-200 text-emerald-700' : 'bg-slate-200 text-slate-500'}">
+                            ${isPaid ? '✓' : w}
+                        </div>
+                        <div>
+                            <p class="font-bold text-xs text-slate-800">สัปดาห์ที่ ${w}</p>
+                            <p class="text-[11px] ${isPaid ? 'text-emerald-600 font-semibold' : 'text-slate-400'}">
+                                ${isPaid ? `ชำระแล้ว (+${amount} ฿)` : 'ยังไม่ได้ชำระเงินออม (10 ฿)'}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold ${isPaid ? 'text-emerald-600 bg-white px-2.5 py-0.5 rounded-full shadow-sm' : 'text-slate-400 bg-white px-2.5 py-0.5 rounded-full'}">
+                        ${isPaid ? 'จ่ายแล้ว' : 'ยังไม่ออม'}
+                    </span>
+                `;
+                checklistContainer.appendChild(card);
+            }
+
+            // Expenses Read-Only Table
+            const expTbody = document.getElementById('stu-expense-tbody');
+            expTbody.innerHTML = '';
+            if(appState.expenses.length === 0) {
+                expTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 text-xs font-semibold">ไม่มีรายการค่าใช้จ่าย</td></tr>`;
+            } else {
+                appState.expenses.forEach(exp => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-3 font-bold text-slate-700">${exp.title}</td>
+                        <td class="p-3 text-slate-400 text-xs">${exp.date}</td>
+                        <td class="p-3 text-right font-extrabold text-rose-500">-${Number(exp.amount).toFixed(2)} ฿</td>
+                    `;
+                    expTbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Staff Dashboard Render (สำหรับเหรัญญิก และ ครู)
+        function renderStaffDashboard() {
+            const totalSavings = getAllStudentsTotalSavings();
+            const classFund = totalSavings * appState.classFundRate;
+            const totalExpenses = getTotalExpenses();
+            const netFund = classFund - totalExpenses;
+
+            document.getElementById('staff-stat-total-savings').innerText = `${totalSavings.toFixed(2)} ฿`;
+            document.getElementById('staff-stat-class-fund').innerText = `${classFund.toFixed(2)} ฿`;
+            document.getElementById('staff-stat-expenses').innerText = `${totalExpenses.toFixed(2)} ฿`;
+            document.getElementById('staff-stat-fund-net').innerText = `${netFund.toFixed(2)} ฿`;
+
+            const isAdmin = appState.currentUser.role === 'admin';
+
+            // ตรวจสอบและซ่อนแท็บรายชื่อนักเรียนสำหรับเหรัญญิก
+            const btnStudentsTab = document.getElementById('staff-tab-btn-students');
+            if(btnStudentsTab) {
+                if(isAdmin) {
+                    btnStudentsTab.classList.remove('hidden');
+                } else {
+                    btnStudentsTab.classList.add('hidden');
+                    const stuTab = document.getElementById('staff-subtab-students');
+                    if(stuTab && !stuTab.classList.contains('hidden')) {
+                        switchStaffSubTab('deposit');
+                    }
+                }
+            }
+
+            // Populate Student Select Dropdown
+            const selectStu = document.getElementById('staff-deposit-student');
+            selectStu.innerHTML = '';
+            appState.students.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.innerText = `[${s.id}] ${s.name} ${s.isTreasurer ? '🪙' : ''}`;
+                selectStu.appendChild(opt);
+            });
+
+            // Render Savings Matrix Table Header (W1 - W40)
+            const matrixTheadTr = document.getElementById('staff-matrix-thead-tr');
+            matrixTheadTr.innerHTML = `
+                <th class="p-3 sticky left-0 bg-pink-50 z-20 shadow-sm">รหัส</th>
+                <th class="p-3 sticky left-16 bg-pink-50 z-20 shadow-sm border-r border-pink-200">ชื่อ - นามสกุล</th>
+            `;
+            for (let w = 1; w <= MAX_WEEKS; w++) {
+                const th = document.createElement('th');
+                th.className = "p-2 text-center border-r border-pink-100 min-w-[55px]";
+                th.innerText = `ส.${w}`;
+                matrixTheadTr.appendChild(th);
+            }
+            const thTotal = document.createElement('th');
+            thTotal.className = "p-3 text-right sticky right-0 bg-pink-50 z-20 shadow-sm border-l border-pink-200";
+            thTotal.innerText = "รวมเงินออม";
+            matrixTheadTr.appendChild(thTotal);
+
+            // Render Savings Matrix Table Rows
+            const matrixTbody = document.getElementById('staff-savings-matrix-tbody');
+            matrixTbody.innerHTML = '';
+            appState.students.forEach(s => {
+                const rowTotal = Object.values(s.savings || {}).reduce((sum, v) => sum + (v || 0), 0);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                
+                let cellsHTML = `
+                    <td class="p-3 font-mono font-bold text-pink-600 sticky left-0 bg-white z-10 shadow-sm">${s.id}</td>
+                    <td class="p-3 font-bold text-slate-800 sticky left-16 bg-white z-10 shadow-sm border-r border-slate-100 whitespace-nowrap">
+                        ${s.name} ${s.isTreasurer ? '<span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded">เหรัญญิก</span>' : ''}
+                    </td>
+                `;
+
+                for (let w = 1; w <= MAX_WEEKS; w++) {
+                    const val = (s.savings && s.savings[w]) ? s.savings[w] : 0;
+                    cellsHTML += `
+                        <td class="p-2 text-center font-semibold border-r border-slate-100 ${val > 0 ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
+                            ${val > 0 ? val : '-'}
+                        </td>
+                    `;
+                }
+
+                cellsHTML += `
+                    <td class="p-3 text-right font-black text-slate-800 sticky right-0 bg-white z-10 shadow-sm border-l border-slate-100">
+                        ${rowTotal.toFixed(2)} ฿
+                    </td>
+                `;
+
+                tr.innerHTML = cellsHTML;
+                matrixTbody.appendChild(tr);
+            });
+
+            // Render Expenses Table
+            const expTbody = document.getElementById('staff-expense-tbody');
+            expTbody.innerHTML = '';
+            if(appState.expenses.length === 0) {
+                expTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs font-semibold">ยังไม่มีรายการค่าใช้จ่าย</td></tr>`;
+            } else {
+                appState.expenses.forEach(exp => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-3 text-slate-500 font-medium">${exp.date}</td>
+                        <td class="p-3 font-bold text-slate-800">${exp.title}</td>
+                        <td class="p-3 text-right font-extrabold text-rose-600">${Number(exp.amount).toFixed(2)} ฿</td>
+                        <td class="p-3 text-center flex items-center justify-center gap-2">
+                            <button onclick="openModalExpense('${exp.id}')" class="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg transition" title="แก้ไข">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteExpense('${exp.id}')" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition" title="ลบออก">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    expTbody.appendChild(tr);
+                });
+            }
+
+            // Render Students Manage Table & Role Toggle (เฉพาะครู)
+            if(isAdmin) {
+                const stuTbody = document.getElementById('staff-student-tbody');
+                stuTbody.innerHTML = '';
+                appState.students.forEach(s => {
+                    const rowTotal = Object.values(s.savings || {}).reduce((sum, v) => sum + (v || 0), 0);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="p-3 font-mono font-bold text-pink-600">${s.id}</td>
+                        <td class="p-3 font-bold text-slate-800">${s.name}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="toggleTreasurerRole('${s.id}')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold border transition ${s.isTreasurer ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-amber-50'}">
+                                ${s.isTreasurer ? '🪙 เหรัญญิก' : '👧 นักเรียนปกติ'}
+                            </button>
+                        </td>
+                        <td class="p-3 font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded w-fit">${s.pin}</td>
+                        <td class="p-3 text-right font-extrabold text-emerald-600">${rowTotal.toFixed(2)} ฿</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteStudent('${s.id}')" class="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition" title="ลบนักเรียน">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    stuTbody.appendChild(tr);
+                });
+
+                const btnAddStu = document.getElementById('btn-add-student-container');
+                if(btnAddStu) btnAddStu.classList.remove('hidden');
+            }
+        }
+
+        // Toggle Treasurer Role by Teacher
+        function toggleTreasurerRole(studentId) {
+            if (appState.currentUser.role !== 'admin') {
+                showToast("เฉพาะคุณครูเท่านั้นที่สามารถกำหนดเหรัญญิกได้", "error");
+                return;
+            }
+            const student = appState.students.find(s => s.id === studentId);
+            if(student) {
+                student.isTreasurer = !student.isTreasurer;
+                showToast(`อัปเดตสิทธิ์ของ ${student.name} เรียบร้อยแล้ว`, 'success');
+                renderStaffDashboard();
+            }
+        }
+
+        // Staff Sub-tab Switcher
+        function switchStaffSubTab(tab) {
+            if (tab === 'students' && appState.currentUser.role !== 'admin') {
+                showToast("คุณไม่มีสิทธิ์เข้าถึงส่วนการจัดการนักเรียน", "error");
+                return;
+            }
+
+            const depositTab = document.getElementById('staff-subtab-deposit');
+            const expTab = document.getElementById('staff-subtab-expenses');
+            const stuTab = document.getElementById('staff-subtab-students');
+
+            const btnDeposit = document.getElementById('staff-tab-btn-deposit');
+            const btnExp = document.getElementById('staff-tab-btn-expenses');
+            const btnStu = document.getElementById('staff-tab-btn-students');
+
+            [depositTab, expTab, stuTab].forEach(t => t.classList.add('hidden'));
+            [btnDeposit, btnExp, btnStu].forEach(b => b.className = "px-4 py-2.5 rounded-2xl font-bold text-xs text-slate-500 hover:bg-pink-50 flex items-center gap-2 transition");
+
+            if(tab === 'deposit') {
+                depositTab.classList.remove('hidden');
+                btnDeposit.className = "px-4 py-2.5 rounded-2xl font-bold text-xs bg-pink-100 text-pink-700 border border-pink-200 flex items-center gap-2 transition";
+            } else if(tab === 'expenses') {
+                expTab.classList.remove('hidden');
+                btnExp.className = "px-4 py-2.5 rounded-2xl font-bold text-xs bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-2 transition";
+            } else if(tab === 'students') {
+                stuTab.classList.remove('hidden');
+                btnStu.className = "px-4 py-2.5 rounded-2xl font-bold text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-2 transition";
+            }
+        }
+
+        // Action: Save or Edit Deposit Amount (สามารถทำได้ทั้ง ครู และ เหรัญญิก)
+        function handleSaveDeposit(e) {
+            e.preventDefault();
+            const studentId = document.getElementById('staff-deposit-student').value;
+            const week = parseInt(document.getElementById('staff-deposit-week').value);
+            const amount = parseFloat(document.getElementById('staff-deposit-amount').value);
+
+            const student = appState.students.find(s => s.id === studentId);
+            if(student) {
+                if(!student.savings) student.savings = {};
+                student.savings[week] = amount;
+                showToast(`บันทึก/แก้ไขยอดเงินออมของ ${student.name} สัปดาห์ที่ ${week} เป็น ${amount} บาทแล้ว`, 'success');
+                renderStaffDashboard();
+            }
+        }
+
+        // Action: Open Modal Add/Edit Expense
+        function openModalExpense(expenseId) {
+            const modalTitle = document.getElementById('modal-expense-title');
+            const editIdInput = document.getElementById('exp-edit-id');
+            const titleInput = document.getElementById('exp-title');
+            const amountInput = document.getElementById('exp-amount');
+            const dateInput = document.getElementById('exp-date');
+
+            if(expenseId) {
+                const exp = appState.expenses.find(e => e.id === expenseId);
+                if(exp) {
+                    modalTitle.innerHTML = `<span>✏️</span><span>แก้ไขรายการค่าใช้จ่าย</span>`;
+                    editIdInput.value = exp.id;
+                    titleInput.value = exp.title;
+                    amountInput.value = exp.amount;
+                    dateInput.value = exp.date;
+                }
+            } else {
+                modalTitle.innerHTML = `<span>🛍️</span><span>บันทึกค่าใช้จ่ายใหม่</span>`;
+                editIdInput.value = '';
+                titleInput.value = '';
+                amountInput.value = '';
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            toggleModal('modal-expense', true);
+        }
+
+        function handleSaveExpenseForm(e) {
+            e.preventDefault();
+            const editId = document.getElementById('exp-edit-id').value;
+            const title = document.getElementById('exp-title').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            const date = document.getElementById('exp-date').value;
+
+            if(editId) {
+                const exp = appState.expenses.find(e => e.id === editId);
+                if(exp) {
+                    exp.title = title;
+                    exp.amount = amount;
+                    exp.date = date;
+                    showToast('แก้ไขรายการค่าใช้จ่ายเรียบร้อยแล้ว', 'success');
+                }
+            } else {
+                appState.expenses.push({
+                    id: 'EXP' + Date.now(),
+                    title: title,
+                    amount: amount,
+                    date: date
+                });
+                showToast('เพิ่มรายการค่าใช้จ่ายเรียบร้อยแล้ว', 'success');
+            }
+
+            toggleModal('modal-expense', false);
+            renderStaffDashboard();
+        }
+
+        function deleteExpense(expenseId) {
+            customConfirm("ลบรายการค่าใช้จ่าย", "คุณแน่ใจหรือว่าต้องการลบรายการนี้ออกจากระบบ?", () => {
+                appState.expenses = appState.expenses.filter(e => e.id !== expenseId);
+                showToast('ลบรายการค่าใช้จ่ายแล้ว', 'info');
+                renderStaffDashboard();
+            });
+        }
+
+        function handleCreateStudent(e) {
+            e.preventDefault();
+            if (appState.currentUser.role !== 'admin') {
+                showToast("เฉพาะคุณครูเท่านั้นที่สามารถเพิ่มนักเรียนได้", "error");
+                return;
+            }
+            const id = document.getElementById('new-stu-id').value.trim();
+            const name = document.getElementById('new-stu-name').value.trim();
+            const pin = document.getElementById('new-stu-pin').value.trim();
+            const isTreasurer = document.getElementById('new-stu-is-treasurer').checked;
+
+            if(appState.students.some(s => s.id.toLowerCase() === id.toLowerCase())) {
+                showToast('รหัสนักเรียนนี้มีอยู่ในระบบแล้ว', 'error');
+                return;
+            }
+
+            appState.students.push({
+                id: id,
+                name: name,
+                pin: pin,
+                isTreasurer: isTreasurer,
+                savings: generateInitialSavings(0, 0)
+            });
+
+            showToast(`เพิ่มนักเรียน ${name} เรียบร้อยแล้ว`, 'success');
+            toggleModal('modal-add-student', false);
+            document.getElementById('new-stu-id').value = '';
+            document.getElementById('new-stu-name').value = '';
+            document.getElementById('new-stu-pin').value = '';
+            document.getElementById('new-stu-is-treasurer').checked = false;
+            renderStaffDashboard();
+        }
+
+        function deleteStudent(id) {
+            if (appState.currentUser.role !== 'admin') {
+                showToast("เฉพาะคุณครูเท่านั้นที่สามารถลบนกเรียนได้", "error");
+                return;
+            }
+            customConfirm("ลบนักเรียน", `คุณต้องการลบรหัสนักเรียน ${id} ออกจากระบบหรือไม่?`, () => {
+                appState.students = appState.students.filter(s => s.id !== id);
+                showToast('ลบข้อมูลนักเรียนแล้ว', 'info');
+                renderStaffDashboard();
+            });
+        }
+
+        // Calculation Helpers
+        function getAllStudentsTotalSavings() {
+            return appState.students.reduce((total, student) => {
+                const sum = Object.values(student.savings || {}).reduce((s, v) => s + (v || 0), 0);
+                return total + sum;
+            }, 0);
+        }
+
+        function getTotalExpenses() {
+            return appState.expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+        }
+
+        // EXPORT FUNCTIONS (PDF, Excel, CSV/Google Sheet, PNG)
+        function exportToPDF() {
+            showToast("กำลังจัดเตรียมไฟล์ PDF...", "info");
+            const element = document.getElementById('exportable-report-area');
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3],
+                filename:     'รายงานการออมเงินสัปดาห์ละ10บาท_40สัปดาห์.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function exportToExcel() {
+            showToast("กำลังส่งออกไฟล์ Excel 40 สัปดาห์...", "info");
+            const savingsData = appState.students.map(s => {
+                const total = Object.values(s.savings || {}).reduce((sum, v) => sum + (v || 0), 0);
+                const rowObj = {
+                    "รหัสนักเรียน": s.id,
+                    "ชื่อ-นามสกุล": s.name,
+                    "ตำแหน่ง": s.isTreasurer ? "เหรัญญิก" : "นักเรียน"
+                };
+                for (let w = 1; w <= MAX_WEEKS; w++) {
+                    rowObj[`สัปดาห์ที่ ${w}`] = (s.savings && s.savings[w]) ? s.savings[w] : 0;
+                }
+                rowObj["เงินออมรวม"] = total;
+                return rowObj;
+            });
+
+            const wb = XLSX.utils.book_new();
+            const wsSavings = XLSX.utils.json_to_sheet(savingsData);
+            XLSX.utils.book_append_sheet(wb, wsSavings, "ตารางออมเงิน 40 สัปดาห์");
+
+            const expenseData = appState.expenses.map(e => ({
+                "วันที่": e.date,
+                "รายการ": e.title,
+                "จำนวนเงิน (บาท)": e.amount
+            }));
+            const wsExpenses = XLSX.utils.json_to_sheet(expenseData);
+            XLSX.utils.book_append_sheet(wb, wsExpenses, "ค่าใช้จ่ายส่วนกลาง");
+
+            XLSX.writeFile(wb, "สรุปยอดออมเงิน10บาท_40สัปดาห์.xlsx");
+        }
+
+        function exportToCSV() {
+            showToast("กำลังเตรียมไฟล์ CSV สำหรับ Google Sheets...", "info");
+            let csvContent = "\uFEFFรหัสนักเรียน,ชื่อ-นามสกุล,ตำแหน่ง";
+            for (let w = 1; w <= MAX_WEEKS; w++) {
+                csvContent += `,สัปดาห์ที่ ${w}`;
+            }
+            csvContent += ",รวมเงินออม\n";
+
+            appState.students.forEach(s => {
+                const total = Object.values(s.savings || {}).reduce((sum, v) => sum + (v || 0), 0);
+                const roleText = s.isTreasurer ? "เหรัญญิก" : "นักเรียน";
+                let rowStr = `"${s.id}","${s.name}","${roleText}"`;
+                for (let w = 1; w <= MAX_WEEKS; w++) {
+                    rowStr += `,${(s.savings && s.savings[w]) ? s.savings[w] : 0}`;
+                }
+                rowStr += `,${total}\n`;
+                csvContent += rowStr;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "รายงานการออมเงิน_10บาท_40สัปดาห์_GoogleSheets.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportToPNG() {
+            showToast("กำลังจับภาพรายงานเป็นรูป PNG...", "info");
+            const element = document.getElementById('exportable-report-area');
+            html2canvas(element).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'สรุปยอดออมเงิน10บาท_40สัปดาห์.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        // Modal Toggle
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if(show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        // Notification Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800 text-white';
+            if(type === 'success') bg = 'bg-emerald-500 text-white shadow-lg';
+            if(type === 'error') bg = 'bg-rose-500 text-white shadow-lg';
+
+            toast.className = `px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 transition-all transform duration-300 translate-y-2 opacity-0 ${bg}`;
+            toast.innerHTML = `<span>${type === 'success' ? '✨' : type === 'error' ? '⚠️' : 'ℹ️'}</span><span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
