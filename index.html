@@ -318,7 +318,7 @@
                 <button onclick="switchTab('expensesTab')" id="btnTabExpenses" class="bounce-btn px-5 py-3 font-extrabold font-playful text-sm flex items-center gap-2 bg-white text-gray-500 hover:bg-pink-50">
                     <i class="fa-solid fa-calculator"></i> บันทึกค่าใช้จ่ายห้องเรียน
                 </button>
-                <button onclick="switchTab('studentsTab')" id="nTabStudents" class="bounce-btn px-5 py-3 font-extrabold font-playful text-sm items-center gap-2 bg-white text-gray-500 hover:bg-pink-50 hidden">
+                <button (TEACHER ONLY) onclick="switchTab('studentsTab')" id="btnTabStudents" class="bounce-btn px-5 py-3 font-extrabold font-playful text-sm items-center gap-2 bg-white text-gray-500 hover:bg-pink-50 hidden">
                     <i class="fa-solid fa-users-gear"></i> รายชื่อนักเรียน & กำหนดเหรัญญิก
                 </button>
             </div>
@@ -346,19 +346,19 @@
                         <!-- Import & Export Actions (TEACHER ONLY) -->
                         <div class="flex items-center gap-2 flex-wrap">
                             <!-- Import from Google Sheets / CSV Button (Teacher Only) -->
-                            <button id="btnImportSheets" onclick="openImportModal()" class="bounce-btn px-3.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 font-playful hidden">
+                            <button id="btnImportSheets" (TEACHER ONLY) onclick="openImportModal()" class="bounce-btn px-3.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 font-playful hidden">
                                 <i class="fa-file-csv fa-solid"></i> นำเข้าข้อมูลจาก Google Sheets
                             </button>
                             
                             <div id="exportActionsGroup" class="flex items-center gap-2 flex-wrap">
                                 <span class="text-xs text-gray-400 font-bold font-playful mr-1"><i class="fa-solid fa-file-export"></i> ส่งออกรายงาน:</span>
-                                <button onclick="exportSavings('pdf')" class="bounce-btn px-3.5 py-1.5 bg-red-400 hover:bg-red-500 text-white text-xs font-bold shadow-sm flex items-center gap-1 font-playful">
+                                <button (TEACHER ONLY) onclick="exportSavings('pdf')" class="bounce-btn px-3.5 py-1.5 bg-red-400 hover:bg-red-500 text-white text-xs font-bold shadow-sm flex items-center gap-1 font-playful">
                                     <i class="fa-solid fa-file-pdf"></i> PDF
                                 </button>
-                                <button onclick="exportSavings('excel')" class="bounce-btn px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm flex items-center gap-1 font-playful">
+                                <button (TEACHER ONLY) onclick="exportSavings('excel')" class="bounce-btn px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm flex items-center gap-1 font-playful">
                                     <i class="fa-solid fa-file-excel"></i> Excel
                                 </button>
-                                <button onclick="exportSavings('png')" class="bounce-btn px-3.5 py-1.5 bg-blue-400 hover:bg-blue-500 text-white text-xs font-bold shadow-sm flex items-center gap-1 font-playful">
+                                <button (TEACHER ONLY) onclick="exportSavings('png')" class="bounce-btn px-3.5 py-1.5 bg-blue-400 hover:bg-blue-500 text-white text-xs font-bold shadow-sm flex items-center gap-1 font-playful">
                                     <i class="fa-solid fa-file-image"></i> PNG
                                 </button>
                             </div>
